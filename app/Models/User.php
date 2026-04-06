@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\HasAvatar;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasAvatar
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -51,4 +52,11 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+public function getFilamentAvatarUrl(): ?string
+{
+    return $this->image
+        ? asset('storage/' . $this->image)
+        : 'https://ui-avatars.com/api/?name=' . urlencode($this->name);
+}
 }

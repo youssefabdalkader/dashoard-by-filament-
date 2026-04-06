@@ -9,9 +9,11 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Tables\Actions\EditBulkAction;
 
 use function Laravel\Prompts\text;
 
@@ -25,7 +27,7 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')->required()->maxLength(255),
+                Forms\Components\TextInput::make('name')->required()->maxLength(255)->unique(ignoreRecord: true),
             ]);
     }
 
@@ -43,7 +45,8 @@ class CategoryResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()?->hasRole('admin')),
                 ]),
             ]);
     }
@@ -64,17 +67,21 @@ class CategoryResource extends Resource
         ];
     }
     public static function canCreate(): bool
-{
-    return auth()->user()->hasAnyRole(['admin','editor']);
-}
+    {
+        return auth()->user()->hasAnyRole(['admin', 'editor']);
+    }
 
-public static function canEdit($record): bool
-{
-    return auth()->user()->hasAnyRole(['admin','editor']);
-}
+    public static function canEdit($record): bool
+    {
+        return auth()->user()->hasAnyRole(['admin' , 'editor']);
+    }
 
-public static function canDelete($record): bool
-{
-    return auth()->user()->hasRole('admin');
-}
+    public static function canDelete($record): bool
+    {
+        if (auth()->user()->hasRole('admin')) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

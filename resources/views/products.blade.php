@@ -11,16 +11,42 @@
 <nav class="navbar navbar-dark bg-dark px-4">
     <span class="navbar-brand">Products</span>
 
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-3">
 
-        <!-- Dashboard (Admin + Editor only) -->
-        @if(auth()->user()->hasAnyRole(['admin','editor']))
+        @php
+            $user = auth()->user();
+        @endphp
+
+        {{-- User Avatar --}}
+        <div class="d-flex align-items-center gap-2">
+
+            @if($user?->image)
+                <img
+                    src="{{ asset('storage/' . $user->image) }}"
+                    style="width:40px;height:40px;border-radius:50%;object-fit:cover;"
+                >
+            @else
+                <div style="width:24px;height:24px;border-radius:50%;background:#ccc;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;">
+                    {{ collect(explode(' ', $user?->name))
+                        ->map(fn($word) => strtoupper(substr($word, 0, 1)))
+                        ->implode('') }}
+                </div>
+            @endif
+
+            <span class="text-white small">
+                {{ $user?->name }}
+            </span>
+
+        </div>
+
+        {{-- Dashboard --}}
+        @if($user->hasAnyRole(['admin','editor']))
             <a href="/admin" class="btn btn-primary btn-sm">
                 Dashboard
             </a>
         @endif
 
-        <!-- Logout -->
+        {{-- Logout --}}
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button class="btn btn-danger btn-sm">

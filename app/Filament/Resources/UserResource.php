@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -44,8 +45,28 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('email'),
                 Tables\Columns\ImageColumn::make('image'),
-                Tables\Columns\TextColumn::make('role'),
+                Tables\Columns\TextColumn::make('roles')
+                    ->formatStateUsing(fn($record) => $record->roles->pluck('name')->join(', '))
+                    ->color(fn($record) => match ($record->roles->first()?->name) {
+                        'admin' => 'danger',
+                        'editor' => 'warning',
+                        default => 'gray',
+                    })
             ])
+            ->filters([
+
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()?->hasRole('admin')),
+                ]),
+            ])
+
             ->filters([
                 //
             ])
@@ -54,7 +75,8 @@ class UserResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()?->hasRole('admin')),
                 ]),
             ]);
     }
@@ -75,17 +97,17 @@ class UserResource extends Resource
         ];
     }
     public static function canCreate(): bool
-{
-    return auth()->user()->hasAnyRole(['admin','editor']);
-}
+    {
+        return auth()->user()->hasAnyRole(['admin', 'editor']);
+    }
 
-public static function canEdit($record): bool
-{
-    return auth()->user()->hasAnyRole(['admin','editor']);
-}
+    public static function canEdit($record): bool
+    {
+        return auth()->user()->hasAnyRole(['admin']);
+    }
 
-public static function canDelete($record): bool
-{
-    return auth()->user()->hasRole('admin');
-}
+    public static function canDelete($record): bool
+    {
+        return auth()->user()->hasRole('admin');
+    }
 }
